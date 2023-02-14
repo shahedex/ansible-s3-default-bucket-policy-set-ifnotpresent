@@ -1,0 +1,13 @@
+- name: check bucket for policy
+  block:
+  - name: check bucket policy and if not exists failover
+    command: aws s3api get-bucket-policy --bucket {{ item }} --query Policy
+    register: BUCKET_POLICY
+  rescue:
+  - name: Set the policy file
+    template:
+      src: policy.j2
+      dest: policy.json
+  - name: push policy in bucket if does not have one
+    command: aws s3api put-bucket-policy --bucket {{ item }} --policy file://policy.json
+    when: '"NoSuchBucketPolicy" in BUCKET_POLICY.stderr'

@@ -1,0 +1,23 @@
+---
+- hosts: localhost
+  tasks:
+    - name: get bucket list
+      command: aws s3api list-buckets --no-paginate --query "Buckets[].Name"
+      register: BUCKET_LIST
+    - name: Set bucket list names
+      set_fact: buckets="{{ BUCKET_LIST.stdout }}"
+    - name: show bucket list
+      debug:
+        msg: "{{ buckets }}"
+
+    - name: get policyless buckets and add policy
+      include_role:
+        name: check-bucket-and-add-policy
+      loop: "{{ buckets }}"
+
+    - name: cleaning up temp files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - policy.json
